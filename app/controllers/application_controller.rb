@@ -14,13 +14,24 @@ class ApplicationController < Sinatra::Base
         product.to_json(include: [:categories, :suppliers, :purchases])
     end
 
-    post '/products' do
+    post "/products" do
         new_product = Product.create({
             name: params[:name],
             inventory: params[:inventory],
             retail_price: params[:retail_price],
             image: params[:image]
         })
+
+        new_collection = Collection.create({
+            product_id: new_product.id,
+            category_id: params[:category]
+        }).to_json
+
+        new_purchase = Purchase.create({
+            product_id: new_product.id,
+            supplier_id: params[:supplier]
+        }).to_json
+
         new_product.to_json
     end
 
@@ -49,7 +60,7 @@ class ApplicationController < Sinatra::Base
 
     get '/categories/:id' do
         category = Category.find(params[:id])
-        category.to_json( include: :products )
+        category.to_json( include: {products: {include: [:categories, :suppliers] }})
     end
 
     post '/categories' do
@@ -83,7 +94,7 @@ class ApplicationController < Sinatra::Base
 
     get '/suppliers/:id' do
         supplier = Supplier.find(params[:id])
-        supplier.to_json(include: :products)
+        supplier.to_json(include: {products: {include: [:suppliers, :categories]} })
     end
 
     post '/suppliers' do
@@ -106,6 +117,36 @@ class ApplicationController < Sinatra::Base
     end
 
     delete '/suppliers/:id' do
+        supplier = Supplier.find(params[:id])
+        supplier.destroy
+        supplier.to_json
+    end
+
+    # Create collection (category and product)
+    post '/collections' do
+        new_collection = Collection.create({
+            category_id: params[:category_id],
+            product_id: params[:product_id]
+        })
+        new_collection.to_json
+    end
+
+    delete '/collections/:id' do
+        collection = Collection.find(params[:id])
+        collection.destroy
+        collection.to_json
+    end
+
+    # Create collection (category and product)
+    post '/suppliers' do
+        new_supplier = Collection.create({
+            supplier_id: params[:supplier_id],
+            product_id: params[:product_id]
+        })
+        new_supplier.to_json
+    end
+
+    delete "/suppliers/:id" do 
         supplier = Supplier.find(params[:id])
         supplier.destroy
         supplier.to_json
